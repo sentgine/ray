@@ -1,0 +1,24 @@
+{
+    "name": "sentgine/ray",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Sentgine\\Ray\\": "src/"
+        },
+        "files": [
+			"src/Functions/core.php"
+    	]
+    },
+    "authors": [
+        {
+            "name": "Sentgine",
+            "email": "sentgine@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "nikic/fast-route": "^2.0@dev",
+        "symfony/error-handler": "7.2.x-dev"
+    }
+}

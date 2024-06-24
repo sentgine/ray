@@ -1,0 +1,4 @@
+vendor
+tests/temp
+.vscode
+/node_modules
