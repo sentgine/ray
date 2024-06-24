@@ -1,5 +1,6 @@
 {
     "name": "sentgine/ray",
+    "description": "Ray is a lightweight PHP library for building MVC frameworks.",
     "type": "library",
     "license": "MIT",
     "autoload": {
