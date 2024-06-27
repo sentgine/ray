@@ -3,8 +3,6 @@
 namespace Sentgine\Ray;
 
 use Exception;
-use FastRoute\RouteCollector;
-use function FastRoute\simpleDispatcher;
 
 class Route
 {
@@ -111,31 +109,91 @@ class Route
      */
     public function dispatch(string $httpMethod, string $uri): void
     {
-        try {
-            $dispatcher = simpleDispatcher(function (RouteCollector $r) {
-                foreach ($this->routes as $route) {
-                    $r->addRoute($route[0], $route[1], $route[2]);
-                }
-            });
+        $uri = rtrim($uri, '/');
+        $routeInfo = $this->findRoute($httpMethod, $uri);
 
-            $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
-
-            switch ($routeInfo[0]) {
-                case \FastRoute\Dispatcher::NOT_FOUND:
-                    echo view($this->notFoundTemplate);
-                    break;
-                case \FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
-                    echo view($this->methodNotAllowedTemplate);
-                    break;
-                case \FastRoute\Dispatcher::FOUND:
-                    $handler = $routeInfo[1];
-                    $vars = $routeInfo[2];
-                    $this->handleRequest($handler, $vars);
-                    break;
-            }
-        } catch (Exception $e) {
-            throw new Exception($e->getMessage());
+        switch ($routeInfo[0]) {
+            case 'NOT_FOUND':
+                echo view($this->notFoundTemplate);
+                break;
+            case 'METHOD_NOT_ALLOWED':
+                echo view($this->methodNotAllowedTemplate);
+                break;
+            case 'FOUND':
+                $handler = $routeInfo[1];
+                $vars = $routeInfo[2];
+                $this->handleRequest($handler, $vars);
+                break;
         }
+    }
+
+    /**
+     * Finds a route that matches the given HTTP method and URI.
+     *
+     * @param string $httpMethod
+     * @param string $uri
+     * @return array
+     */
+    private function findRoute(string $httpMethod, string $uri): array
+    {
+        $allowedMethods = [];
+
+        foreach ($this->routes as $route) {
+            [$method, $routeUri, $handler] = $route;
+            $routeUri = rtrim($routeUri, '/');
+
+            if ($this->matchUri($routeUri, $uri, $vars)) {
+                if ($httpMethod === $method) {
+                    return ['FOUND', $handler, $vars];
+                }
+
+                $allowedMethods[] = $method;
+            }
+        }
+
+        return empty($allowedMethods) ? ['NOT_FOUND'] : ['METHOD_NOT_ALLOWED'];
+    }
+
+    /**
+     * Matches the given URI against the route URI and extracts variables.
+     *
+     * @param string $routeUri
+     * @param string $uri
+     * @param array $vars
+     * @return bool
+     */
+    private function matchUri(string $routeUri, string $uri, &$vars = []): bool
+    {
+        $routeParts = explode('/', $routeUri);
+        $uriParts = explode('/', $uri);
+
+        $vars = [];
+        foreach ($routeParts as $index => $part) {
+            if (preg_match('/^\{(\w+)\?\}$/', $part, $matches)) {
+                // Optional parameter
+                if (isset($uriParts[$index])) {
+                    $vars[$matches[1]] = $uriParts[$index];
+                } else {
+                    $vars[$matches[1]] = null;
+                }
+            } elseif (preg_match('/^\{(\w+)\}$/', $part, $matches)) {
+                // Required parameter
+                if (isset($uriParts[$index])) {
+                    $vars[$matches[1]] = $uriParts[$index];
+                } else {
+                    return false;
+                }
+            } elseif ($part !== ($uriParts[$index] ?? null)) {
+                return false;
+            }
+        }
+
+        // Ensure that all URI parts are matched
+        if (count($uriParts) > count($routeParts)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

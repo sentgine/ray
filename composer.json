@@ -19,7 +19,6 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "nikic/fast-route": "^2.0@dev",
         "symfony/error-handler": "7.2.x-dev"
     }
 }
