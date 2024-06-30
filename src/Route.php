@@ -2,7 +2,8 @@
 
 namespace Sentgine\Ray;
 
-use Exception;
+use Sentgine\Ray\Http\Request;
+use Sentgine\Ray\Http\Response;
 
 class Route
 {
@@ -14,65 +15,71 @@ class Route
     /**
      * Registers a GET route.
      *
-     * @param string $route
-     * @param mixed $handler
+     * @param string $route The route pattern.
+     * @param callable|string $handler The handler for the route.
+     * @param array $middlewares The middlewares for the route.
      */
-    public function get(string $route, $handler): void
+    public function get(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['GET', $this->currentGroupPrefix . $route, $handler];
+        $this->routes[] = ['GET', $this->currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
      * Registers a POST route.
      *
-     * @param string $route
-     * @param mixed $handler
+     * @param string $route The route pattern.
+     * @param callable|string $handler The handler for the route.
+     * @param array $middlewares The middlewares for the route.
      */
-    public function post(string $route, $handler): void
+    public function post(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['POST', $this->currentGroupPrefix . $route, $handler];
+        $this->routes[] = ['POST', $this->currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
      * Registers a PUT route.
      *
-     * @param string $route
-     * @param mixed $handler
+     * @param string $route The route pattern.
+     * @param callable|string $handler The handler for the route.
+     * @param array $middlewares The middlewares for the route.
      */
-    public function put(string $route, $handler): void
+    public function put(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['PUT', $this->currentGroupPrefix . $route, $handler];
+        $this->routes[] = ['PUT', $this->currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
      * Registers a PATCH route.
      *
-     * @param string $route
-     * @param mixed $handler
+     * @param string $route The route pattern.
+     * @param callable|string $handler The handler for the route.
+     * @param array $middlewares The middlewares for the route.
      */
-    public function patch(string $route, $handler): void
+    public function patch(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['PATCH', $this->currentGroupPrefix . $route, $handler];
+        $this->routes[] = ['PATCH', $this->currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
      * Registers a DELETE route.
      *
-     * @param string $route
-     * @param mixed $handler
+     * @param string $route The route pattern.
+     * @param callable|string $handler The handler for the route.
+     * @param array $middlewares The middlewares for the route.
      */
-    public function delete(string $route, $handler): void
+    public function delete(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['DELETE', $this->currentGroupPrefix . $route, $handler];
+        $this->routes[] = ['DELETE', $this->currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
      * Groups routes under a common prefix.
      *
-     * @param string $prefix
-     * @param callable $callback
+     * @param string $prefix The prefix for the group.
+     * @param callable $callback The callback to define the group routes.
+     * @param array $middlewares The middlewares for the group.
      */
-    public function group(string $prefix, callable $callback): void
+    public function group(string $prefix, callable $callback, array $middlewares = []): void
     {
         $previousGroupPrefix = $this->currentGroupPrefix;
         $this->currentGroupPrefix .= $prefix;
@@ -103,9 +110,8 @@ class Route
     /**
      * Dispatches the request to the appropriate route handler.
      *
-     * @param string $httpMethod
-     * @param string $uri
-     * @throws Exception
+     * @param string $httpMethod The HTTP method of the request.
+     * @param string $uri The URI of the request.
      */
     public function dispatch(string $httpMethod, string $uri): void
     {
@@ -120,31 +126,30 @@ class Route
                 echo view($this->methodNotAllowedTemplate);
                 break;
             case 'FOUND':
-                $handler = $routeInfo[1];
-                $vars = $routeInfo[2];
-                $this->handleRequest($handler, $vars);
+                [$handler, $vars, $middlewares] = $routeInfo[1];
+                $this->handleRequest($handler, $vars, $middlewares);
                 break;
         }
     }
 
     /**
-     * Finds a route that matches the given HTTP method and URI.
+     * Finds the route that matches the given HTTP method and URI.
      *
-     * @param string $httpMethod
-     * @param string $uri
-     * @return array
+     * @param string $httpMethod The HTTP method of the request.
+     * @param string $uri The URI of the request.
+     * @return array The route information.
      */
     private function findRoute(string $httpMethod, string $uri): array
     {
         $allowedMethods = [];
 
         foreach ($this->routes as $route) {
-            [$method, $routeUri, $handler] = $route;
+            [$method, $routeUri, $handler, $middlewares] = $route;
             $routeUri = rtrim($routeUri, '/');
 
             if ($this->matchUri($routeUri, $uri, $vars)) {
                 if ($httpMethod === $method) {
-                    return ['FOUND', $handler, $vars];
+                    return ['FOUND', [$handler, $vars, $middlewares]];
                 }
 
                 $allowedMethods[] = $method;
@@ -155,12 +160,12 @@ class Route
     }
 
     /**
-     * Matches the given URI against the route URI and extracts variables.
+     * Matches the URI with the route pattern.
      *
-     * @param string $routeUri
-     * @param string $uri
-     * @param array $vars
-     * @return bool
+     * @param string $routeUri The route pattern.
+     * @param string $uri The URI to match.
+     * @param array $vars The variables extracted from the URI.
+     * @return bool True if the URI matches the route pattern, false otherwise.
      */
     private function matchUri(string $routeUri, string $uri, &$vars = []): bool
     {
@@ -170,14 +175,12 @@ class Route
         $vars = [];
         foreach ($routeParts as $index => $part) {
             if (preg_match('/^\{(\w+)\?\}$/', $part, $matches)) {
-                // Optional parameter
                 if (isset($uriParts[$index])) {
                     $vars[$matches[1]] = $uriParts[$index];
                 } else {
                     $vars[$matches[1]] = null;
                 }
             } elseif (preg_match('/^\{(\w+)\}$/', $part, $matches)) {
-                // Required parameter
                 if (isset($uriParts[$index])) {
                     $vars[$matches[1]] = $uriParts[$index];
                 } else {
@@ -188,7 +191,6 @@ class Route
             }
         }
 
-        // Ensure that all URI parts are matched
         if (count($uriParts) > count($routeParts)) {
             return false;
         }
@@ -197,49 +199,68 @@ class Route
     }
 
     /**
-     * Handles the request by invoking the appropriate handler.
+     * Handles the request by calling the appropriate handler.
      *
-     * @param mixed $handler
-     * @param array $vars
+     * @param callable|string $handler The handler for the route.
+     * @param array $vars The variables extracted from the URI.
+     * @param array $middlewares The middlewares for the route.
      */
-    private function handleRequest($handler, array $vars): void
+    private function handleRequest($handler, array $vars, array $middlewares): void
     {
-        if (is_array($handler)) {
-            [$class, $method] = $handler;
+        $request = Request::createFromGlobals();
 
-            $reflectionMethod = new \ReflectionMethod($class, $method);
-            $parameters = $reflectionMethod->getParameters();
+        $middlewareStack = array_reverse($middlewares);
+        $next = function ($request) use ($handler, $vars) {
+            if (is_array($handler)) {
+                [$class, $method] = $handler;
+                $reflectionMethod = new \ReflectionMethod($class, $method);
+                $parameters = $reflectionMethod->getParameters();
 
-            $params = [];
+                $params = [];
 
-            foreach ($parameters as $parameter) {
-                $paramName = $parameter->getName();
-                $paramType = $parameter->getType();
+                foreach ($parameters as $parameter) {
+                    $paramName = $parameter->getName();
+                    $paramType = $parameter->getType();
 
-                if (array_key_exists($paramName, $vars)) {
-                    $params[] = $vars[$paramName];
-                } elseif ($paramType) {
-                    $paramClass = $paramType->getName();
-                    $params[] = $this->instantiateClass($paramClass);
+                    if (array_key_exists($paramName, $vars)) {
+                        $params[] = $vars[$paramName];
+                    } elseif ($paramType) {
+                        $paramClass = $paramType->getName();
+                        $params[] = $this->instantiateClass($paramClass);
+                    }
                 }
+
+                if (class_exists($class)) {
+                    $controller = new $class();
+                    if (method_exists($controller, $method)) {
+                        return call_user_func_array([$controller, $method], $params);
+                    }
+                }
+            } elseif (is_callable($handler)) {
+                return call_user_func_array($handler, $vars);
             }
 
-            if (class_exists($class)) {
-                $controller = new $class();
-                if (method_exists($controller, $method)) {
-                    call_user_func_array([$controller, $method], $params);
-                }
-            }
-        } elseif (is_callable($handler)) {
-            call_user_func_array($handler, $vars);
+            return null;
+        };
+
+        foreach ($middlewareStack as $middleware) {
+            $next = function ($request) use ($middleware, $next) {
+                $middlewareInstance = new $middleware();
+                return $middlewareInstance->handle($request, $next);
+            };
+        }
+
+        $response = $next($request);
+        if ($response instanceof Response) {
+            $response->send();
         }
     }
 
     /**
-     * Dynamically instantiates a class based on its fully qualified class name.
+     * Instantiates a class.
      *
-     * @param string $className The fully qualified class name.
-     * @return object An instance of the class.
+     * @param string $className The name of the class to instantiate.
+     * @return object The instantiated class.
      */
     private function instantiateClass(string $className): object
     {
