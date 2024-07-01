@@ -172,3 +172,53 @@ if (!function_exists('url')) {
         return $baseUrl . ltrim($slug, '/'); // Ensure no leading slash on the slug
     }
 }
+
+if (!function_exists('redirect')) {
+    /**
+     * Redirect to a specified URL.
+     *
+     * @param string $url The URL to redirect to.
+     * @return void
+     */
+    function redirect(string $url = '/')
+    {
+        if (!headers_sent()) {
+            // If headers are not sent yet, use header() function
+            header("Location: $url");
+            exit;
+        } else {
+            // If headers are already sent, use JavaScript to redirect
+            echo "<script type='text/javascript'>window.location.href='$url';</script>";
+            exit;
+        }
+    }
+}
+
+if (!function_exists('url_segment')) {
+    /**
+     * Retrieve a specific segment from the URL path.
+     *
+     * @param int $segment The segment position to retrieve (1-based index).
+     * @return string|null The URL segment or null if not found or invalid segment.
+     */
+    function url_segment(int $segment): ?string
+    {
+        // Check if the segment is a positive integer
+        if ($segment <= 0) {
+            return null;
+        }
+
+        // Get the current URL path
+        $urlPath = $_SERVER['REQUEST_URI'];
+
+        // Parse the URL path and remove query string and leading/trailing slashes
+        $path = parse_url($urlPath, PHP_URL_PATH);
+        $path = trim($path, '/');
+
+        // Split the path into segments
+        $segments = explode('/', $path);
+
+        // Return the specified segment if it exists
+        return $segments[$segment - 1] ?? null;
+    }
+}
