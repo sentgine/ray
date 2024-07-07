@@ -16,7 +16,7 @@ Ray is a minimalistic library designed to build MVC frameworks. It provides esse
 - **Helper Functions**: Utility functions to streamline development.
 
 ## Requirements
-- PHP 8.1 or higher.
+- PHP 8.2 or higher.
 
 ## Installation
 
