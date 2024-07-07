@@ -19,7 +19,6 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=8.2",
-        "symfony/error-handler": "7.2.x-dev"
+        "php": ">=8.2"
     }
 }
