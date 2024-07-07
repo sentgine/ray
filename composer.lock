@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f5900e849610ebe7d0ab2a3373045dc4",
+    "content-hash": "6f42f409df8f55573274e40fe98d6067",
     "packages": [
         {
             "name": "psr/log",
@@ -63,12 +63,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/error-handler.git",
-                "reference": "b14b64e0a401c7094feaa5efc8946457767ac438"
+                "reference": "f97e68e55daa802548aa47b4c6e89db973b63dc5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/error-handler/zipball/b14b64e0a401c7094feaa5efc8946457767ac438",
-                "reference": "b14b64e0a401c7094feaa5efc8946457767ac438",
+                "url": "https://api.github.com/repos/symfony/error-handler/zipball/f97e68e55daa802548aa47b4c6e89db973b63dc5",
+                "reference": "f97e68e55daa802548aa47b4c6e89db973b63dc5",
                 "shasum": ""
             },
             "require": {
@@ -130,7 +130,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-06-25T20:18:01+00:00"
+            "time": "2024-07-06T07:57:47+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
@@ -219,12 +219,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-dumper.git",
-                "reference": "4373294ffa6ddbb7ac1805d57f6c2d5a5619a109"
+                "reference": "bfcd455d4870a448202f0a3f8bea20cc57498aa3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/4373294ffa6ddbb7ac1805d57f6c2d5a5619a109",
-                "reference": "4373294ffa6ddbb7ac1805d57f6c2d5a5619a109",
+                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/bfcd455d4870a448202f0a3f8bea20cc57498aa3",
+                "reference": "bfcd455d4870a448202f0a3f8bea20cc57498aa3",
                 "shasum": ""
             },
             "require": {
@@ -294,7 +294,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-06-28T08:01:00+00:00"
+            "time": "2024-07-06T07:57:47+00:00"
         }
     ],
     "packages-dev": [],
@@ -306,7 +306,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.1"
+        "php": ">=8.2"
     },
     "platform-dev": [],
     "plugin-api-version": "2.3.0"
