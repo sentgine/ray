@@ -7,10 +7,10 @@ use Sentgine\Ray\Http\Response;
 
 class Route
 {
-    private array $routes = [];
-    private ?string $notFoundTemplate = null;
-    private ?string $methodNotAllowedTemplate = null;
-    private string $currentGroupPrefix = '';
+    private static array $routes = [];
+    private static ?string $notFoundTemplate = null;
+    private static ?string $methodNotAllowedTemplate = null;
+    private static string $currentGroupPrefix = '';
 
     /**
      * Registers a GET route.
@@ -19,9 +19,9 @@ class Route
      * @param callable|string $handler The handler for the route.
      * @param array $middlewares The middlewares for the route.
      */
-    public function get(string $route, $handler, array $middlewares = []): void
+    public static function get(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['GET', $this->currentGroupPrefix . $route, $handler, $middlewares];
+        self::$routes[] = ['GET', self::$currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
@@ -31,9 +31,9 @@ class Route
      * @param callable|string $handler The handler for the route.
      * @param array $middlewares The middlewares for the route.
      */
-    public function post(string $route, $handler, array $middlewares = []): void
+    public static function post(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['POST', $this->currentGroupPrefix . $route, $handler, $middlewares];
+        self::$routes[] = ['POST', self::$currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
@@ -43,9 +43,9 @@ class Route
      * @param callable|string $handler The handler for the route.
      * @param array $middlewares The middlewares for the route.
      */
-    public function put(string $route, $handler, array $middlewares = []): void
+    public static function put(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['PUT', $this->currentGroupPrefix . $route, $handler, $middlewares];
+        self::$routes[] = ['PUT', self::$currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
@@ -55,9 +55,9 @@ class Route
      * @param callable|string $handler The handler for the route.
      * @param array $middlewares The middlewares for the route.
      */
-    public function patch(string $route, $handler, array $middlewares = []): void
+    public static function patch(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['PATCH', $this->currentGroupPrefix . $route, $handler, $middlewares];
+        self::$routes[] = ['PATCH', self::$currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
@@ -67,9 +67,9 @@ class Route
      * @param callable|string $handler The handler for the route.
      * @param array $middlewares The middlewares for the route.
      */
-    public function delete(string $route, $handler, array $middlewares = []): void
+    public static function delete(string $route, $handler, array $middlewares = []): void
     {
-        $this->routes[] = ['DELETE', $this->currentGroupPrefix . $route, $handler, $middlewares];
+        self::$routes[] = ['DELETE', self::$currentGroupPrefix . $route, $handler, $middlewares];
     }
 
     /**
@@ -79,12 +79,12 @@ class Route
      * @param callable $callback The callback to define the group routes.
      * @param array $middlewares The middlewares for the group.
      */
-    public function group(string $prefix, callable $callback, array $middlewares = []): void
+    public static function group(string $prefix, callable $callback, array $middlewares = []): void
     {
-        $previousGroupPrefix = $this->currentGroupPrefix;
-        $this->currentGroupPrefix .= $prefix;
-        $callback($this);
-        $this->currentGroupPrefix = $previousGroupPrefix;
+        $previousGroupPrefix = self::$currentGroupPrefix;
+        self::$currentGroupPrefix .= $prefix;
+        $callback(new self);
+        self::$currentGroupPrefix = $previousGroupPrefix;
     }
 
     /**
@@ -92,9 +92,9 @@ class Route
      *
      * @param string $path
      */
-    public function setNotFoundTemplate(string $path): void
+    public static function setNotFoundTemplate(string $path): void
     {
-        $this->notFoundTemplate = $path;
+        self::$notFoundTemplate = $path;
     }
 
     /**
@@ -102,9 +102,9 @@ class Route
      *
      * @param string $path
      */
-    public function setMethodNotAllowedTemplate(string $path): void
+    public static function setMethodNotAllowedTemplate(string $path): void
     {
-        $this->methodNotAllowedTemplate = $path;
+        self::$methodNotAllowedTemplate = $path;
     }
 
     /**
@@ -113,21 +113,21 @@ class Route
      * @param string $httpMethod The HTTP method of the request.
      * @param string $uri The URI of the request.
      */
-    public function dispatch(string $httpMethod, string $uri): void
+    public static function dispatch(string $httpMethod, string $uri): void
     {
         $uri = rtrim($uri, '/');
-        $routeInfo = $this->findRoute($httpMethod, $uri);
+        $routeInfo = self::findRoute($httpMethod, $uri);
 
         switch ($routeInfo[0]) {
             case 'NOT_FOUND':
-                echo view($this->notFoundTemplate);
+                echo view(self::$notFoundTemplate);
                 break;
             case 'METHOD_NOT_ALLOWED':
-                echo view($this->methodNotAllowedTemplate);
+                echo view(self::$methodNotAllowedTemplate);
                 break;
             case 'FOUND':
                 [$handler, $vars, $middlewares] = $routeInfo[1];
-                $this->handleRequest($handler, $vars, $middlewares);
+                self::handleRequest($handler, $vars, $middlewares);
                 break;
         }
     }
@@ -139,15 +139,15 @@ class Route
      * @param string $uri The URI of the request.
      * @return array The route information.
      */
-    private function findRoute(string $httpMethod, string $uri): array
+    private static function findRoute(string $httpMethod, string $uri): array
     {
         $allowedMethods = [];
 
-        foreach ($this->routes as $route) {
+        foreach (self::$routes as $route) {
             [$method, $routeUri, $handler, $middlewares] = $route;
             $routeUri = rtrim($routeUri, '/');
 
-            if ($this->matchUri($routeUri, $uri, $vars)) {
+            if (self::matchUri($routeUri, $uri, $vars)) {
                 if ($httpMethod === $method) {
                     return ['FOUND', [$handler, $vars, $middlewares]];
                 }
@@ -167,7 +167,7 @@ class Route
      * @param array $vars The variables extracted from the URI.
      * @return bool True if the URI matches the route pattern, false otherwise.
      */
-    private function matchUri(string $routeUri, string $uri, &$vars = []): bool
+    private static function matchUri(string $routeUri, string $uri, &$vars = []): bool
     {
         $routeParts = explode('/', $routeUri);
         $uriParts = explode('/', $uri);
@@ -205,7 +205,7 @@ class Route
      * @param array $vars The variables extracted from the URI.
      * @param array $middlewares The middlewares for the route.
      */
-    private function handleRequest($handler, array $vars, array $middlewares): void
+    private static function handleRequest($handler, array $vars, array $middlewares): void
     {
         $request = Request::createFromGlobals();
 
@@ -226,7 +226,7 @@ class Route
                         $params[] = $vars[$paramName];
                     } elseif ($paramType) {
                         $paramClass = $paramType->getName();
-                        $params[] = $this->instantiateClass($paramClass);
+                        $params[] = self::instantiateClass($paramClass);
                     }
                 }
 
@@ -262,7 +262,7 @@ class Route
      * @param string $className The name of the class to instantiate.
      * @return object The instantiated class.
      */
-    private function instantiateClass(string $className): object
+    private static function instantiateClass(string $className): object
     {
         $fullyQualifiedClassName = '\\' . $className;
         return new $fullyQualifiedClassName();
